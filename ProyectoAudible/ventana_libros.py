@@ -79,6 +79,15 @@ class VentanaLibros(QMainWindow):
 
 
     def on_item_double_clicked(self, item):
+        #Simulates a double click on a chapter to initiate the play of the audio
+        chapter_path = item.data(Qt.UserRole)
+        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
+        self.mediaPlayer.play()
+        self.playButton.setText('Pause')
+
+
+    def clicked_on_saved_position(self, item):
+        #Loads the last known moment played of the chapter
         chapter_path = item.data(Qt.UserRole)
         self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
         if not self.return_position() == None:
@@ -90,8 +99,8 @@ class VentanaLibros(QMainWindow):
     def show_chapters(self, book_path):
         chapters = self.database.search_chapters(book_path)
 
-        list_widget = QListWidget()
-        list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
+        self.list_widget = QListWidget()
+        self.list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.LowLatency)
         self.mediaPlayer.positionChanged.connect(self.update_position)
@@ -101,15 +110,15 @@ class VentanaLibros(QMainWindow):
         for chapter in chapters:
             item = QListWidgetItem(os.path.basename(chapter))
             item.setData(Qt.UserRole, chapter)
-            list_widget.addItem(item)
+            self.list_widget.addItem(item)
             if item.text() == self.return_chapter():
-                list_widget.setCurrentItem(item)
+                self.list_widget.setCurrentItem(item)
                 self.chapter_coincidence = True
                 self.actual_item = item
 
         book_name = os.path.basename(os.path.dirname(chapter))
         backButton = QPushButton('Back')
-        backButton.clicked.connect(lambda: self.boton_back(book_name, list_widget.currentItem().text()))
+        backButton.clicked.connect(lambda: self.boton_back(book_name, self.list_widget.currentItem().text()))
 
         self.setWindowTitle('Audio Manager')
         self.center()
@@ -120,7 +129,7 @@ class VentanaLibros(QMainWindow):
         self.playButton.clicked.connect(self.play_pause)
 
         layout = QVBoxLayout(container_widget)
-        layout.addWidget(list_widget)
+        layout.addWidget(self.list_widget)
         layout.addWidget(self.playButton)
 
         # Add QSlider and QLabel 
@@ -129,15 +138,15 @@ class VentanaLibros(QMainWindow):
         self.slider.sliderMoved.connect(self.set_position)
 
         self.label_duration = QLabel("00:00:00 / 00:00:00")
+        layout.addWidget(self.label_duration, alignment=Qt.AlignCenter)
         layout.addWidget(self.slider)
-        layout.addWidget(self.label_duration)
 
         layout.addWidget(backButton)
 
         container_widget.setLayout(layout)
         self.setCentralWidget(container_widget)
         if self.chapter_coincidence:
-            self.on_item_double_clicked(self.actual_item)
+            self.clicked_on_saved_position(self.actual_item)
 
     def boton_back(self, book, chapter):
         self.checkPoint(book, chapter)
@@ -148,7 +157,7 @@ class VentanaLibros(QMainWindow):
         # Save the current position of the audio
         position = Position(book, chapter, self.mediaPlayer.position())
         self.database.save_position(position)
-
+    
 
     def return_book(self):
         return self.database.obtain_position().book
@@ -159,11 +168,24 @@ class VentanaLibros(QMainWindow):
     def return_position(self):
         return self.database.obtain_position().position
 
+    def check_time(self):
+        #Checks when the chapter finishes to continue with the next one
+        if self.mediaPlayer.duration() > 0:
+            if self.mediaPlayer.duration() - self.mediaPlayer.position() < 500:
+                print(f'{self.mediaPlayer.duration() - self.mediaPlayer.position()}')
+                current_index = self.list_widget.currentRow()
+                if current_index < self.list_widget.count() - 1:
+                    new_index = current_index + 1
+                    self.list_widget.setCurrentRow(new_index)
+                    item = self.list_widget.currentItem()
+                    self.on_item_double_clicked(item)
+
 
     def update_position(self, position):
         self.slider.setValue(position)
+        self.check_time()
         self.update_duration_label()
-
+        
 
     def update_duration(self, duration):
         self.slider.setRange(0, duration)
