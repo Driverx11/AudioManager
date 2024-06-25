@@ -11,6 +11,7 @@ class VentanaLibros(QMainWindow):
         self.database = Books()
         self.initUI()
 
+
     def initUI(self):
         self.setWindowTitle('Audio Manager')
         self.center()
@@ -56,11 +57,13 @@ class VentanaLibros(QMainWindow):
         scroll_area.setWidget(container_widget)
         self.setCentralWidget(scroll_area)
 
+
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
 
     def play_pause(self):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
@@ -70,15 +73,26 @@ class VentanaLibros(QMainWindow):
             self.mediaPlayer.play()
             self.playButton.setText('Pause')
 
+
     def on_item_double_clicked(self, item):
         chapter_path = item.data(Qt.UserRole)
+        chapter_name = item.text()
         self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
         self.mediaPlayer.play()
         self.playButton.setText('Pause')
 
+        backButton = QPushButton('Back')
+        backButton.clicked.connect(lambda: self.boton_back(os.path.basename(os.path.dirname(chapter_path)), chapter_name))
+
+        # Añadir slider y etiqueta de duración
+        layout = self.centralWidget().layout()
+        layout.addWidget(self.slider)
+        layout.addWidget(self.label_duration)
+        layout.addWidget(backButton)
+
+
     def show_chapters(self, book_path):
         chapters = self.database.search_chapters(book_path)
-
         list_widget = QListWidget()
         list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
 
@@ -91,8 +105,9 @@ class VentanaLibros(QMainWindow):
             item.setData(Qt.UserRole, chapter)
             list_widget.addItem(item)
 
-        backButton = QPushButton('Back')
-        backButton.clicked.connect(self.initUI)
+        folder_name = os.path.basename(os.path.dirname(chapter))
+        #backButton = QPushButton('Back')
+#        backButton.clicked.connect(lambda: self.boton_back(folder_name, chapter_name))
 
         self.setWindowTitle('Audio Manager')
         self.center()
@@ -115,21 +130,35 @@ class VentanaLibros(QMainWindow):
         layout.addWidget(self.slider)
         layout.addWidget(self.label_duration)
 
-        layout.addWidget(backButton)
+        #layout.addWidget(backButton)
 
         container_widget.setLayout(layout)
         self.setCentralWidget(container_widget)
+
+
+    def boton_back(self, book, chapter):
+        self.initUI()
+        self.checkPoint(book, chapter)
+
+
+    def checkPoint(self, book, chapter):
+        # Save the current position of the audio
+        self.database.save_position(self.mediaPlayer.position(), book, chapter)
+
 
     def update_position(self, position):
         self.slider.setValue(position)
         self.update_duration_label()
 
+
     def update_duration(self, duration):
         self.slider.setRange(0, duration)
         self.update_duration_label()
 
+
     def set_position(self, position):
         self.mediaPlayer.setPosition(position)
+
 
     def update_duration_label(self):
         position = self.mediaPlayer.position()
@@ -139,6 +168,7 @@ class VentanaLibros(QMainWindow):
         dur_time = self.format_time(duration)
         
         self.label_duration.setText(f"{pos_time} / {dur_time}")
+
 
     def format_time(self, ms):
         seconds = ms // 1000
