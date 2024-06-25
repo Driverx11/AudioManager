@@ -35,6 +35,13 @@ class Books():
                     books.extend(Books.recursive_search(entry.path))
         
         return books
+    
+    def save_position(self, position, book, chapter):
+        with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
+            f.write(f"{book}, {chapter}, {position}")
+
+
+    
 
 
                     

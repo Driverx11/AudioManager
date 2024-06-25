@@ -11,6 +11,7 @@ class VentanaLibros(QMainWindow):
         self.database = Books()
         self.initUI()
 
+
     def initUI(self):
         self.setWindowTitle('Audio Manager')
         self.center()
@@ -56,11 +57,13 @@ class VentanaLibros(QMainWindow):
         scroll_area.setWidget(container_widget)
         self.setCentralWidget(scroll_area)
 
+
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
 
     def play_pause(self):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
@@ -70,11 +73,13 @@ class VentanaLibros(QMainWindow):
             self.mediaPlayer.play()
             self.playButton.setText('Pause')
 
+
     def on_item_double_clicked(self, item):
         chapter_path = item.data(Qt.UserRole)
         self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
         self.mediaPlayer.play()
         self.playButton.setText('Pause')
+
 
     def show_chapters(self, book_path):
         chapters = self.database.search_chapters(book_path)
@@ -91,8 +96,9 @@ class VentanaLibros(QMainWindow):
             item.setData(Qt.UserRole, chapter)
             list_widget.addItem(item)
 
+        book_name = os.path.basename(os.path.dirname(chapter))
         backButton = QPushButton('Back')
-        backButton.clicked.connect(self.initUI)
+        backButton.clicked.connect(lambda: self.boton_back(book_name, list_widget.currentItem().text()))
 
         self.setWindowTitle('Audio Manager')
         self.center()
@@ -120,16 +126,29 @@ class VentanaLibros(QMainWindow):
         container_widget.setLayout(layout)
         self.setCentralWidget(container_widget)
 
+    def boton_back(self, book, chapter):
+        self.checkPoint(book, chapter)
+        self.initUI()
+        
+
+
+    def checkPoint(self, book, chapter):
+        # Save the current position of the audio
+        self.database.save_position(self.mediaPlayer.position(), book, chapter)
+
     def update_position(self, position):
         self.slider.setValue(position)
         self.update_duration_label()
+
 
     def update_duration(self, duration):
         self.slider.setRange(0, duration)
         self.update_duration_label()
 
+
     def set_position(self, position):
         self.mediaPlayer.setPosition(position)
+
 
     def update_duration_label(self):
         position = self.mediaPlayer.position()
@@ -139,6 +158,7 @@ class VentanaLibros(QMainWindow):
         dur_time = self.format_time(duration)
         
         self.label_duration.setText(f"{pos_time} / {dur_time}")
+
 
     def format_time(self, ms):
         seconds = ms // 1000
