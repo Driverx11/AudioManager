@@ -16,6 +16,7 @@ class Books():
                     audio_files.append(os.path.join(root, file))
         return audio_files
     
+
     def recursive_search(foulder_path):
         books = []
         # Escanea los contenidos del directorio actual
@@ -37,4 +38,6 @@ class Books():
         return books
 
 
-                    
+    def save_position(self, position, book, chapter):
+        with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
+            f.write(f"{book}, {chapter}, {position}")
