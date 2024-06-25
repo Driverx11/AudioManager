@@ -1,4 +1,5 @@
 import os
+from position import *
 
 class Books(): 
 
@@ -36,12 +37,24 @@ class Books():
         
         return books
     
-    def save_position(self, position, book, chapter):
+    def save_position(self, position):
         with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
-            f.write(f"{book}, {chapter}, {position}")
+            f.write(f"{position.book}, {position.chapter}, {position.position}")
 
 
-    
+    def obtain_position(self):
+        if not os.path.exists(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv")):
+            position = Position("book", "chapter", 0)
+            with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
+                f.write(f"{position.book}, {position.chapter}, {position.position}")
+            return position
+        else:
+            with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "r") as f:
+                line = f.read()
+                book, chapter, position = line.split(", ")
+                position = Position(book, chapter, int(position))
+                return position
+            
 
 
                     

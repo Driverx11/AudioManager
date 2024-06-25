@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QDes
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl
 from db import Books
+from position import *
 import os
 
 class VentanaLibros(QMainWindow):
@@ -33,6 +34,9 @@ class VentanaLibros(QMainWindow):
         row, col = 0, 0
         for index, book in enumerate(name_books):
             book_frame = QFrame()
+            saved_book = self.return_book()
+            if book == saved_book:
+                book_frame.setStyleSheet("background-color: #6EEA5A;")
             book_button = QPushButton("Open Book")
             book_button.clicked.connect(lambda _, p=path_books[index]: self.show_chapters(p))
             book_frame.setFrameShape(QFrame.Box)
@@ -77,6 +81,8 @@ class VentanaLibros(QMainWindow):
     def on_item_double_clicked(self, item):
         chapter_path = item.data(Qt.UserRole)
         self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
+        if not self.return_position() == None:
+            self.mediaPlayer.setPosition(self.return_position())
         self.mediaPlayer.play()
         self.playButton.setText('Pause')
 
@@ -90,11 +96,16 @@ class VentanaLibros(QMainWindow):
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.LowLatency)
         self.mediaPlayer.positionChanged.connect(self.update_position)
         self.mediaPlayer.durationChanged.connect(self.update_duration)
+        self.chapter_coincidence = False
 
         for chapter in chapters:
             item = QListWidgetItem(os.path.basename(chapter))
             item.setData(Qt.UserRole, chapter)
             list_widget.addItem(item)
+            if item.text() == self.return_chapter():
+                list_widget.setCurrentItem(item)
+                self.chapter_coincidence = True
+                self.actual_item = item
 
         book_name = os.path.basename(os.path.dirname(chapter))
         backButton = QPushButton('Back')
@@ -125,16 +136,29 @@ class VentanaLibros(QMainWindow):
 
         container_widget.setLayout(layout)
         self.setCentralWidget(container_widget)
+        if self.chapter_coincidence:
+            self.on_item_double_clicked(self.actual_item)
 
     def boton_back(self, book, chapter):
         self.checkPoint(book, chapter)
         self.initUI()
         
 
-
     def checkPoint(self, book, chapter):
         # Save the current position of the audio
-        self.database.save_position(self.mediaPlayer.position(), book, chapter)
+        position = Position(book, chapter, self.mediaPlayer.position())
+        self.database.save_position(position)
+
+
+    def return_book(self):
+        return self.database.obtain_position().book
+    
+    def return_chapter(self):
+        return self.database.obtain_position().chapter
+    
+    def return_position(self):
+        return self.database.obtain_position().position
+
 
     def update_position(self, position):
         self.slider.setValue(position)
