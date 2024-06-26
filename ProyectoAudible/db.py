@@ -1,5 +1,8 @@
-import os
+from PyQt5.QtWidgets import QFileDialog
+import tkinter as tk
+from tkinter import messagebox
 from position import *
+import os, shutil
 
 class Books(): 
 
@@ -17,6 +20,64 @@ class Books():
                     audio_files.append(os.path.join(root, file))
         return audio_files
     
+    
+    def add_book(self):
+        #Select and copy the foulder to the audio's foulder destination
+        carpeta_seleccionada = QFileDialog.getExistingDirectory(None, "Selecciona una carpeta")
+        if carpeta_seleccionada:
+            destino = os.path.join(os.path.expanduser("~"), "OneDrive", "Documentos", "Audible")
+        
+            destino_principal = os.path.join(os.path.expanduser("~"), "OneDrive", "Documentos", "Audible")
+
+            # Obtener el nombre de la carpeta seleccionada
+            nombre_carpeta = os.path.basename(carpeta_seleccionada)
+
+            # Definir la ruta completa de destino para la carpeta seleccionada
+            destino = os.path.join(destino_principal, nombre_carpeta)
+
+            # Asegurarse de que la carpeta de destino principal existe
+            if not os.path.exists(destino_principal):
+                os.makedirs(destino_principal)
+
+            # Asegurarse de que la carpeta de destino no existe para evitar errores
+            if not os.path.exists(destino):
+                os.makedirs(destino)
+
+            # Copiar el contenido de la carpeta seleccionada al destino
+            self.copiar_contenido(carpeta_seleccionada, destino)
+            print(f'Carpeta copiada de {carpeta_seleccionada} a {destino}')
+
+        else:
+            print("No se seleccionó ninguna carpeta")
+
+
+    def copiar_contenido(self, origen, destino):
+        # Recorrer todos los archivos y directorios en el directorio de origen
+        for item in os.listdir(origen):
+            origen_item = os.path.join(origen, item)
+            destino_item = os.path.join(destino, item)
+
+            # Si es un directorio, copiar recursivamente
+            if os.path.isdir(origen_item):
+                if not os.path.exists(destino_item):
+                    os.makedirs(destino_item)
+                self.copiar_contenido(origen_item, destino_item)
+            else:
+                # Si es un archivo, copiarlo al directorio de destino
+                shutil.copy2(origen_item, destino_item)
+
+
+    def delete_book(self, selected_foulder):
+        root = tk.Tk()
+        root.withdraw()
+        # Show dialog box
+        respuesta = messagebox.askyesno('Confirmar Eliminación', '¿Estás seguro de eliminar el libro?')
+        # if true deleate the book
+        if respuesta:
+            # Deleate the book
+            shutil.rmtree(selected_foulder)
+
+            
     def recursive_search(foulder_path):
         books = []
         # Escanea los contenidos del directorio actual

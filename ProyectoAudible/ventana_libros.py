@@ -1,22 +1,55 @@
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QDesktopWidget, QGridLayout, QFrame, QLabel, QScrollArea, QListWidget, QListWidgetItem, QSlider, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QDesktopWidget, QGridLayout, QFrame, QLabel, QScrollArea, QListWidget, QListWidgetItem, QSlider, QHBoxLayout, QComboBox, QMessageBox
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QIcon
 from db import Books
+from book import *
 from position import *
 import os
+import webbrowser
 
 class VentanaLibros(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.index_guardado = 0
+        self.book_name = None
+        self.selected_item = None
+        self.clear = False
         self.database = Books()
+        self.book = Book(None, None)
         self.initUI()
 
-
+    
     def initUI(self):
-        self.setWindowTitle('Audio Manager')
+        self.setWindowTitle('Audio Manager - Home')
+        self.setWindowIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","app_icon.png")))
+        self.resize(270, 400)
+        
+        container_widget = QWidget()
+        layout = QVBoxLayout(container_widget)
+
+        items_list_button = QPushButton('Books/Playlists')
+        items_list_button.clicked.connect(self.show_books)
+        
+        how_to_use_button = QPushButton('How to use')
+        how_to_use_button.clicked.connect(self.show_how_to_use)
+
+        readMe_button = QPushButton('ReadMe')
+        readMe_button.clicked.connect(self.show_readme)
+
+        layout.addWidget(items_list_button)
+        layout.addWidget(how_to_use_button)
+        layout.addWidget(readMe_button)
+
+        container_widget.setLayout(layout)
+        self.setCentralWidget(container_widget)
         self.center()
+        
+    def show_books(self):
+        self.setWindowTitle("AudioManager - Books")
+        self.setWindowIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","app_icon.png")))
+        self.resize(270, 400)
 
         scroll_area = QScrollArea()
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -29,11 +62,21 @@ class VentanaLibros(QMainWindow):
 
         layout = QVBoxLayout(container_widget)
 
-        name_books = [os.path.basename(path) for path in self.database.search_books()]
+        add_button = QPushButton('Add book/playlist')
+        add_button.clicked.connect(self.reload_books_added)
+
+        del_button = QPushButton('Delete book/playlist')
+        del_button.clicked.connect(self.select_elimination)
+
+        manager_buttons = QHBoxLayout()
+        manager_buttons.addWidget(add_button)
+        manager_buttons.addWidget(del_button)
+        
+        self.name_books = [os.path.basename(path) for path in self.database.search_books()]
         path_books = self.database.search_books()
         booksLayout = QGridLayout()
         row, col = 0, 0
-        for index, book in enumerate(name_books):
+        for index, book in enumerate(self.name_books):
             book_frame = QFrame()
             saved_book = self.return_book()
             
@@ -54,58 +97,31 @@ class VentanaLibros(QMainWindow):
                 col = 0
                 row += 1
 
-        if len(name_books) > 20:
+        if len(self.name_books) > 20:
             layout.setContentsMargins(10, 5, 25, 5)
         else:
             layout.setContentsMargins(10, 5, 10, 5)
-        layout.addLayout(booksLayout)
 
+        button_home = QPushButton('Home')
+        button_home.clicked.connect(self.button_home)
+
+        layout.addLayout(manager_buttons)
+        layout.addLayout(booksLayout)
+        layout.addWidget(button_home)
+        
         container_widget.setLayout(layout)
         scroll_area.setWidget(container_widget)
         self.setCentralWidget(scroll_area)
 
-
-    def closeEvent(self, event):
-        print("La ventana se está cerrando")
-        self.boton_back(self.book_name, self.list_widget.currentItem().text())
-        event.accept()
-
-
-    def center(self):
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
-
-
-    def play_pause(self):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.mediaPlayer.pause()
-            self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","play_icon.png")))
-        else:
-            self.mediaPlayer.play()
-            self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
-
-
-    def on_item_double_clicked(self, item):
-        #Simulates a double click on a chapter to initiate the play of the audio
-        chapter_path = item.data(Qt.UserRole)
-        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
-        self.mediaPlayer.play()
-        self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
-
-
-    def clicked_on_saved_position(self, item):
-        #Loads the last known moment played of the chapter
-        chapter_path = item.data(Qt.UserRole)
-        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
-        if not self.return_position() == None:
-            self.mediaPlayer.setPosition(self.return_position())
-        self.mediaPlayer.play()
-        self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
+       
+        self.center()
 
 
     def show_chapters(self, book_path):
+        self.setWindowTitle("AudioManager - Chapters")
+        self.setWindowIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","app_icon.png")))
+        self.resize(270, 400)
+
         self.chapters = self.database.search_chapters(book_path)
 
         self.list_widget = QListWidget()
@@ -127,7 +143,7 @@ class VentanaLibros(QMainWindow):
 
         self.book_name = os.path.basename(os.path.dirname(chapter))
         backButton = QPushButton('Menu')
-        backButton.clicked.connect(lambda: self.boton_back(self.book_name, self.list_widget.currentItem().text()))
+        backButton.clicked.connect(self.go_back_menu)
         
 
         self.setWindowTitle('Audio Manager')
@@ -188,6 +204,96 @@ class VentanaLibros(QMainWindow):
             self.list_widget.setCurrentRow(0)
             self.on_item_double_clicked(self.list_widget.currentItem())
 
+        self.center()
+
+    def go_back_menu(self):
+        self.selected_item = self.list_widget.currentItem().text()
+        self.button_back(self.book_name, self.list_widget.currentItem().text())
+
+    def show_how_to_use(self):
+        QMessageBox.information(self, "How to use", "To play an episode, double click on")
+
+
+    def show_readme(self):
+         webbrowser.open("https://github.com/Driverx11/AudioManager/blob/main/README.md")
+
+
+    def center(self):
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+        window_geometry = self.frameGeometry()
+        window_geometry.moveCenter(screen_geometry.center())
+        self.move(window_geometry.center())
+
+
+    def play_pause(self):
+        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+            self.mediaPlayer.pause()
+            self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","play_icon.png")))
+        else:
+            self.mediaPlayer.play()
+            self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
+
+
+    def on_item_double_clicked(self, item):
+        #Simulates a double click on a chapter to initiate the play of the audio
+        chapter_path = item.data(Qt.UserRole)
+        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
+        self.mediaPlayer.play()
+        self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
+
+
+    def clicked_on_saved_position(self, item):
+        #Loads the last known moment played of the chapter
+        chapter_path = item.data(Qt.UserRole)
+        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(chapter_path)))
+        if not self.return_position() == None:
+            self.mediaPlayer.setPosition(self.return_position())
+        self.mediaPlayer.play()
+        self.playButton.setIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","pause_icon.png")))
+
+    def reload_books_added(self):
+        #Reloads the list of books
+        self.database.add_book()
+        self.show_books()
+
+
+    def reload_books_deleted(self):
+        selected_book = self.combo_box.itemData(self.combo_box.currentIndex()).get("info")
+        path_books = [path for path in self.database.search_books()]
+        for book in path_books:
+            if selected_book == book:
+                self.database.delete_book(selected_book)
+                self.show_books()
+                
+            
+
+    def select_elimination(self):
+        self.setWindowTitle('Book list')
+        self.center()
+
+        container = QWidget()
+        layout_books = QVBoxLayout()
+
+        self.combo_box = QComboBox()
+        index = 0
+        path_books = [path for path in self.database.search_books()]
+        for book in path_books:
+            self.combo_box.addItem(os.path.basename(book))
+            self.combo_box.setItemData(index, {"info": book})
+            index += 1
+
+        label = QLabel("Which one do you want to delete?")
+
+        del_button = QPushButton("Delete book", self)
+        del_button.clicked.connect(self.reload_books_deleted)
+
+        layout_books.addWidget(label)
+        layout_books.addWidget(self.combo_box)
+        layout_books.addWidget(del_button)
+        container.setLayout(layout_books)
+        self.setCentralWidget(container)
+
 
     def rewind_10s(self):
         current_position = self.mediaPlayer.position()
@@ -215,14 +321,17 @@ class VentanaLibros(QMainWindow):
         self.on_item_double_clicked(self.list_widget.currentItem())
     
 
-    def boton_back(self, book, chapter):
+    def button_back(self, book, chapter):
         self.checkPoint(book, chapter)
+        self.show_books()
+
+    def button_home(self):
         self.initUI()
-        
 
     def checkPoint(self, book, chapter):
         # Save the current position of the audio
-        position = Position(book, chapter, self.mediaPlayer.position())
+        position = Position(book, chapter, max(self.mediaPlayer.position() - 2000, 0))
+        print(self.mediaPlayer.position())
         self.database.save_position(position)
     
 
@@ -247,9 +356,20 @@ class VentanaLibros(QMainWindow):
                     item = self.list_widget.currentItem()
                     self.on_item_double_clicked(item)
 
-
+       
     def update_position(self, position):
+        # Updates the position of the audio
+        if self.index_guardado < 1:
+            self.checkPoint(self.book_name, self.list_widget.currentItem().text())
+            self.index_guardado += 1
+
+        first_value = self.slider.value()
         self.slider.setValue(position)
+        last_value = self.slider.value()
+
+        if last_value - first_value >= 1000:
+            self.checkPoint(self.book_name, self.list_widget.currentItem().text())
+            
         self.check_time()
         self.update_duration_label()
         
