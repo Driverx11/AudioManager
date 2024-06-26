@@ -38,18 +38,18 @@ class Books():
         return books
     
     def save_position(self, position):
-        with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
+        with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "w") as f:
             f.write(f"{position.book}, {position.chapter}, {position.position}")
 
 
     def obtain_position(self):
-        if not os.path.exists(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv")):
+        if not os.path.exists(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv")):
             position = Position("book", "chapter", 0)
-            with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "w") as f:
+            with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "w") as f:
                 f.write(f"{position.book}, {position.chapter}, {position.position}")
             return position
         else:
-            with open(os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "position.csv"), "r") as f:
+            with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "r") as f:
                 line = f.read()
                 book, chapter, position = line.split(", ")
                 position = Position(book, chapter, int(position))
