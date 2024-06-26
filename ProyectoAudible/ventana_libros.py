@@ -54,10 +54,10 @@ class VentanaLibros(QMainWindow):
                 col = 0
                 row += 1
 
-        if len(name_books) > 10:
-            layout.setContentsMargins(10, 0, 25, 0)
+        if len(name_books) > 20:
+            layout.setContentsMargins(10, 5, 25, 5)
         else:
-            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setContentsMargins(10, 5, 10, 5)
         layout.addLayout(booksLayout)
 
         container_widget.setLayout(layout)
@@ -196,7 +196,7 @@ class VentanaLibros(QMainWindow):
 
     def go_next_episode(self):
         index = self.list_widget.currentRow()
-        new_episode = min(index + 1, self.list_widget.count())
+        new_episode = min(index + 1, self.list_widget.count() - 1 )
         self.list_widget.setCurrentRow(new_episode)
         self.on_item_double_clicked(self.list_widget.currentItem())
 
