@@ -65,6 +65,12 @@ class VentanaLibros(QMainWindow):
         self.setCentralWidget(scroll_area)
 
 
+    def closeEvent(self, event):
+        print("La ventana se está cerrando")
+        self.boton_back(self.book_name, self.list_widget.currentItem().text())
+        event.accept()
+
+
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
@@ -119,9 +125,10 @@ class VentanaLibros(QMainWindow):
                 self.chapter_coincidence = True
                 self.actual_item = item
 
-        book_name = os.path.basename(os.path.dirname(chapter))
+        self.book_name = os.path.basename(os.path.dirname(chapter))
         backButton = QPushButton('Menu')
-        backButton.clicked.connect(lambda: self.boton_back(book_name, self.list_widget.currentItem().text()))
+        backButton.clicked.connect(lambda: self.boton_back(self.book_name, self.list_widget.currentItem().text()))
+        
 
         self.setWindowTitle('Audio Manager')
         self.center()
