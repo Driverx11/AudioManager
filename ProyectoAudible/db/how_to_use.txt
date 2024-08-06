@@ -1,0 +1,4 @@
+To add a book you need to copy of the original foulder to the Audible foulder in Documents or adding it with the button "Add Book".
+If you want to delete a book just delete it from the foulder or with the button "Delete Book".
+
+The app will remember the las moment that you heard of your book by coloring the book in green and will continue with the reproduction of the book in the place that you left it.

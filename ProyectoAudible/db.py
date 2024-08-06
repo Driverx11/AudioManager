@@ -3,13 +3,17 @@ import tkinter as tk
 from tkinter import messagebox
 from position import *
 import os, shutil
+import csv
 
 class Books(): 
 
+    file_path = os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv")
+    folder_path = os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "Audible")
+
     def search_books(self):
-        folder_path = os.path.join(os.path.expanduser("~"), "OneDrive","Documentos", "Audible")
-        if folder_path:
-            result = Books.recursive_search(folder_path)
+        
+        if self.folder_path:
+            result = Books.recursive_search(self.folder_path)
         return result
     
     def search_chapters(self, book, extensions=[".mp3", ".wav", ".ogg"]):
@@ -25,9 +29,9 @@ class Books():
         #Select and copy the foulder to the audio's foulder destination
         carpeta_seleccionada = QFileDialog.getExistingDirectory(None, "Selecciona una carpeta")
         if carpeta_seleccionada:
-            destino = os.path.join(os.path.expanduser("~"), "OneDrive", "Documentos", "Audible")
+            destino = self.folder_path
         
-            destino_principal = os.path.join(os.path.expanduser("~"), "OneDrive", "Documentos", "Audible")
+            destino_principal = self.folder_path
 
             # Obtener el nombre de la carpeta seleccionada
             nombre_carpeta = os.path.basename(carpeta_seleccionada)
@@ -99,22 +103,43 @@ class Books():
         return books
     
     def save_position(self, position):
-        with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "w") as f:
-            f.write(f"{position.book}, {position.chapter}, {position.position}")
+        with open(self.file_path, "w") as f:
+            f.write(f"{position.book}, {position.chapter}, {position.milisec}")
 
+
+    def csv_vacio(self):
+        with open(self.file_path, mode='r') as file:
+            csv_reader = csv.reader(file)
+            # Intenta leer la primera línea
+            try:
+                first_row = next(csv_reader)
+                # Si se puede leer una línea, no está vacío
+                return False
+            except StopIteration:
+                # Si no se puede leer ninguna línea, está vacío
+                return True
+        
 
     def obtain_position(self):
-        if not os.path.exists(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv")):
-            position = Position("book", "chapter", 0)
-            with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "w") as f:
-                f.write(f"{position.book}, {position.chapter}, {position.position}")
+        position = Position("book", "chapter", 0)
+        if not os.path.exists(self.file_path): 
+            with open(self.file_path, "w") as f:
+                f.write(f"{position.book}, {position.chapter}, {position.milisec}")
             return position
         else:
-            with open(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "db", "position.csv"), "r") as f:
-                line = f.read()
-                book, chapter, position = line.split(", ")
-                position = Position(book, chapter, int(position))
+            if not self.csv_vacio():
+                with open(self.file_path, "r") as f:
+                    line = f.read()
+                    book, chapter, milisec = line.split(", ")
+                    position = Position(book, chapter, int(milisec))
+                print(f"SI {position.chapter, position.book, int(position.milisec)}")
                 return position
+                
+            else:
+                with open(self.file_path, "w") as f:
+                    f.write(f"{position.book}, {position.chapter}, {position.milisec}")
+                return position
+            
             
 
 

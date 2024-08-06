@@ -1,7 +1,7 @@
 
 class Position:
 
-    def __init__(self, book, chapter, position):
+    def __init__(self, book, chapter, milisec):
         self.book = book 
         self.chapter = chapter 
-        self.position = position
+        self.milisec = milisec

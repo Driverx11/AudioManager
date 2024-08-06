@@ -46,6 +46,7 @@ class VentanaLibros(QMainWindow):
         self.setCentralWidget(container_widget)
         self.center()
         
+
     def show_books(self):
         self.setWindowTitle("AudioManager - Books")
         self.setWindowIcon(QIcon(os.path.join(os.path.expanduser("~"), "ProyectosPyQt","AudioManager", "ProyectoAudible", "images","app_icon.png")))
@@ -211,8 +212,9 @@ class VentanaLibros(QMainWindow):
         self.button_back(self.book_name, self.list_widget.currentItem().text())
 
     def show_how_to_use(self):
-        QMessageBox.information(self, "How to use", "To play an episode, double click on")
-
+        with open('db/how_to_use.txt', 'r') as archivo:
+            contenido = archivo.read()
+        QMessageBox.information(self, "How to use", contenido)
 
     def show_readme(self):
          webbrowser.open("https://github.com/Driverx11/AudioManager/blob/main/README.md")
@@ -342,13 +344,13 @@ class VentanaLibros(QMainWindow):
         return self.database.obtain_position().chapter
     
     def return_position(self):
-        return self.database.obtain_position().position
+        print(self.database.obtain_position().milisec)
+        return self.database.obtain_position().milisec
 
     def check_time(self):
         #Checks when the chapter finishes to continue with the next one
         if self.mediaPlayer.duration() > 0:
             if self.mediaPlayer.duration() - self.mediaPlayer.position() < 500:
-                print(f'{self.mediaPlayer.duration() - self.mediaPlayer.position()}')
                 current_index = self.list_widget.currentRow()
                 if current_index < self.list_widget.count() - 1:
                     new_index = current_index + 1
